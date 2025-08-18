@@ -1,51 +1,116 @@
-import React, { useState } from 'react';
-import { Music, Upload, Calendar, Users, Star, FileText, ExternalLink } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Music, Calendar, Users, Star, FileText, ExternalLink, RefreshCw, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { artistAPI } from '../../utils/api';
+
+interface Application {
+  _id: string;
+  stage_name: string;
+  genres: string[];
+  bio: string;
+  portfolio_links: string[];
+  status: 'pending' | 'approved' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
 
 const ArtistDashboard: React.FC = () => {
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isUploading, setIsUploading] = useState(false);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const fetchApplications = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const data = await artistAPI.getMyApplications();
+      setApplications(data);
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || 'Failed to fetch applications';
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    setIsUploading(true);
-    setUploadProgress(0);
+  useEffect(() => {
+    fetchApplications();
+  }, []);
 
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 200);
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <CheckCircle className="w-5 h-5 text-green-500" />;
+      case 'rejected':
+        return <XCircle className="w-5 h-5 text-red-500" />;
+      default:
+        return <Clock className="w-5 h-5 text-yellow-500" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return 'bg-green-100 text-green-800';
+      case 'rejected':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-yellow-100 text-yellow-800';
+    }
+  };
+
+  const getStatusMessage = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return 'Congratulations! Your application has been approved. You now have artist privileges.';
+      case 'rejected':
+        return 'Unfortunately, your application was not approved at this time. You can submit a new application.';
+      default:
+        return 'Your application is being reviewed. We\'ll get back to you within 3-5 business days.';
+    }
   };
 
   const stats = [
-    { label: 'Active Applications', value: '2', icon: FileText, color: 'text-blue-500' },
-    { label: 'Upcoming Events', value: '1', icon: Calendar, color: 'text-green-500' },
-    { label: 'Portfolio Items', value: '8', icon: Music, color: 'text-purple-500' },
-    { label: 'Profile Views', value: '156', icon: Users, color: 'text-yellow-500' }
+    { label: 'Applications Submitted', value: applications.length.toString(), icon: FileText, color: 'text-blue-500' },
+    { label: 'Approved Applications', value: applications.filter(app => app.status === 'approved').length.toString(), icon: CheckCircle, color: 'text-green-500' },
+    { label: 'Pending Review', value: applications.filter(app => app.status === 'pending').length.toString(), icon: Clock, color: 'text-yellow-500' },
+    { label: 'Portfolio Items', value: applications.reduce((total, app) => total + app.portfolio_links.length, 0).toString(), icon: Music, color: 'text-purple-500' }
   ];
 
-  const portfolioItems = [
-    { type: 'Audio', name: 'Summer Nights - Live Recording', date: '2025-01-10', status: 'active' },
-    { type: 'Video', name: 'Acoustic Session #3', date: '2025-01-08', status: 'active' },
-    { type: 'Audio', name: 'Original - Midnight Dreams', date: '2025-01-05', status: 'pending' },
-  ];
+  if (loading) {
+    return (
+      <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 text-purple-500 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Loading your applications...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         {/* Welcome Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome back, Artist!</h1>
-          <p className="mt-2 text-gray-600">Manage your portfolio and track your applications</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Artist Dashboard</h1>
+            <p className="mt-2 text-gray-600">Manage your applications and track your artist journey</p>
+          </div>
+          <button
+            onClick={fetchApplications}
+            className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh
+          </button>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700">{error}</p>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -62,131 +127,108 @@ const ArtistDashboard: React.FC = () => {
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Portfolio Upload Section */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center mb-4">
-              <Upload className="w-6 h-6 text-purple-500 mr-3" />
-              <h2 className="text-xl font-semibold text-gray-900">Upload Portfolio</h2>
-            </div>
-            
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
-              <Music className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <div className="mb-4">
-                <label htmlFor="portfolio-upload" className="cursor-pointer">
-                  <span className="text-purple-600 hover:text-purple-500 font-medium">
-                    Click to upload
-                  </span>
-                  <span className="text-gray-500"> or drag and drop</span>
-                </label>
-                <input
-                  id="portfolio-upload"
-                  type="file"
-                  className="hidden"
-                  accept="audio/*,video/*,image/*"
-                  onChange={handleFileUpload}
-                />
-              </div>
-              <p className="text-sm text-gray-500">Audio, Video, or Image files up to 50MB</p>
-            </div>
-
-            {isUploading && (
-              <div className="mt-4">
-                <div className="flex justify-between text-sm text-gray-600 mb-1">
-                  <span>Uploading...</span>
-                  <span>{uploadProgress}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div 
-                    className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${uploadProgress}%` }}
-                  ></div>
-                </div>
-              </div>
-            )}
+        {/* Applications Section */}
+        {applications.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <Music className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">No Applications Yet</h2>
+            <p className="text-gray-600 mb-6">
+              Ready to showcase your talent? Submit your first artist application and get discovered!
+            </p>
+            <Link
+              to="/apply"
+              className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              <FileText className="w-5 h-5 mr-2" />
+              Submit Application
+            </Link>
           </div>
-
-          {/* Quick Actions */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
-            <div className="space-y-3">
-              <button className="w-full flex items-center justify-between p-3 text-left border border-gray-200 rounded-lg hover:bg-purple-50 hover:border-purple-200 transition-colors">
-                <div className="flex items-center">
-                  <FileText className="w-5 h-5 text-purple-500 mr-3" />
-                  <span className="font-medium">Submit New Application</span>
-                </div>
-                <ExternalLink className="w-4 h-4 text-gray-400" />
-              </button>
-              
-              <button className="w-full flex items-center justify-between p-3 text-left border border-gray-200 rounded-lg hover:bg-blue-50 hover:border-blue-200 transition-colors">
-                <div className="flex items-center">
-                  <Users className="w-5 h-5 text-blue-500 mr-3" />
-                  <span className="font-medium">Update Profile</span>
-                </div>
-                <ExternalLink className="w-4 h-4 text-gray-400" />
-              </button>
-              
-              <button className="w-full flex items-center justify-between p-3 text-left border border-gray-200 rounded-lg hover:bg-green-50 hover:border-green-200 transition-colors">
-                <div className="flex items-center">
-                  <Calendar className="w-5 h-5 text-green-500 mr-3" />
-                  <span className="font-medium">Browse Events</span>
-                </div>
-                <ExternalLink className="w-4 h-4 text-gray-400" />
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Portfolio Items */}
-        <div className="mt-8 bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Your Portfolio</h2>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Item
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Type
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Upload Date
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {portfolioItems.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{item.name}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-gray-500">{item.type}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(item.date).toLocaleDateString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        item.status === 'active' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-yellow-100 text-yellow-800'
-                      }`}>
-                        {item.status}
+        ) : (
+          <div className="space-y-6">
+            {applications.map((application) => (
+              <div key={application._id} className="bg-white rounded-lg shadow overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-gray-900">{application.stage_name}</h3>
+                    <div className="flex items-center">
+                      {getStatusIcon(application.status)}
+                      <span className={`ml-2 px-3 py-1 text-sm font-medium rounded-full capitalize ${getStatusColor(application.status)}`}>
+                        {application.status}
                       </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="p-6">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Genres</h4>
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {application.genres.map((genre, index) => (
+                          <span key={index} className="px-2 py-1 bg-blue-100 text-blue-800 text-sm rounded-full capitalize">
+                            {genre}
+                          </span>
+                        ))}
+                      </div>
+                      
+                      <h4 className="font-semibold text-gray-900 mb-2">Bio</h4>
+                      <p className="text-gray-600 text-sm leading-relaxed">{application.bio}</p>
+                    </div>
+                    
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-2">Portfolio Links</h4>
+                      {application.portfolio_links.length > 0 ? (
+                        <div className="space-y-2">
+                          {application.portfolio_links.map((link, index) => (
+                            <a
+                              key={index}
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex items-center text-purple-600 hover:text-purple-700 text-sm"
+                            >
+                              <ExternalLink className="w-3 h-3 mr-2" />
+                              {link}
+                            </a>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm">No portfolio links provided</p>
+                      )}
+                      
+                      <div className="mt-4 pt-4 border-t border-gray-200">
+                        <p className="text-xs text-gray-500">
+                          <strong>Submitted:</strong> {new Date(application.created_at).toLocaleDateString()}
+                        </p>
+                        {application.updated_at !== application.created_at && (
+                          <p className="text-xs text-gray-500">
+                            <strong>Updated:</strong> {new Date(application.updated_at).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <p className="text-sm text-gray-700">
+                      <strong>Status Update:</strong> {getStatusMessage(application.status)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            <div className="text-center">
+              <Link
+                to="/apply"
+                className="inline-flex items-center px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
+                <FileText className="w-5 h-5 mr-2" />
+                Submit New Application
+              </Link>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
