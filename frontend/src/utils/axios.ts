@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { getToken } from './auth';
 
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8001';
 
 // Create axios instance
 const axiosInstance: AxiosInstance = axios.create({
