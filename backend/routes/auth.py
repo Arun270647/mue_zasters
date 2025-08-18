@@ -3,7 +3,7 @@ from datetime import timedelta
 from bson import ObjectId
 
 from models import UserCreate, UserLogin, Token, User
-from auth import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from auth import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, get_current_user, verify_token
 from db import users_collection
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
