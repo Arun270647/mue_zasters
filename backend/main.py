@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
-from routes import auth, admin, artist, user
+# Only import auth for now to test
+from routes import auth
 from db import close_database
 
 @asynccontextmanager  
@@ -28,11 +29,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
+# Include only auth router for testing
 app.include_router(auth.router, prefix="/api")
-app.include_router(admin.router, prefix="/api")
-app.include_router(artist.router, prefix="/api") 
-app.include_router(user.router, prefix="/api")
 
 @app.get("/")
 async def root():
