@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
 import { setToken, getUserRole } from '../utils/auth';
+import { authAPI } from '../utils/api';
 
 const Login: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -11,6 +12,10 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Show success message if coming from registration
+  const successMessage = location.state?.message;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,39 +23,29 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      const response = await fetch('/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setToken(data.token);
-        const role = getUserRole();
-        
-        // Redirect based on role
-        switch (role) {
-          case 0:
-            navigate('/admin/dashboard');
-            break;
-          case 1:
-            navigate('/artist/dashboard');
-            break;
-          case 2:
-            navigate('/user/dashboard');
-            break;
-          default:
-            navigate('/');
-        }
-      } else {
-        setError(data.message || 'Login failed');
+      const data = await authAPI.login(formData.email, formData.password);
+      
+      // Backend returns access_token, not token
+      setToken(data.access_token);
+      const role = getUserRole();
+      
+      // Redirect based on role
+      switch (role) {
+        case 0:
+          navigate('/admin/dashboard');
+          break;
+        case 1:
+          navigate('/artist/dashboard');
+          break;
+        case 2:
+          navigate('/user/dashboard');
+          break;
+        default:
+          navigate('/');
       }
-    } catch (err) {
-      setError('Network error. Please try again.');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || 'Login failed';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -79,6 +74,13 @@ const Login: React.FC = () => {
         </div>
         
         <form className="mt-8 space-y-6 bg-white p-8 rounded-lg shadow-lg" onSubmit={handleSubmit}>
+          {successMessage && (
+            <div className="flex items-center p-4 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle className="w-5 h-5 text-green-600 mr-3" />
+              <span className="text-green-700">{successMessage}</span>
+            </div>
+          )}
+          
           {error && (
             <div className="flex items-center p-4 bg-red-50 border border-red-200 rounded-lg">
               <AlertCircle className="w-5 h-5 text-red-600 mr-3" />
@@ -125,6 +127,15 @@ const Login: React.FC = () => {
                   onChange={handleChange}
                 />
               </div>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <h4 className="font-semibold text-blue-900 text-sm mb-1">Test Accounts:</h4>
+            <div className="text-xs text-blue-800 space-y-1">
+              <div>Admin: admin@eventco.com / AdminPass123</div>
+              <div>Artist: artist1@mail.com / ArtistPass123</div>
+              <div>User: user1@mail.com / UserPass123</div>
             </div>
           </div>
 

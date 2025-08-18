@@ -1,6 +1,6 @@
 interface DecodedToken {
+  user_id: string;
   role: number;
-  email: string;
   exp: number;
 }
 
@@ -38,6 +38,14 @@ export const getUserRole = (): number | null => {
   
   const decoded = decodeJWT(token);
   return decoded ? decoded.role : null;
+};
+
+export const getUserId = (): string | null => {
+  const token = getToken();
+  if (!token) return null;
+  
+  const decoded = decodeJWT(token);
+  return decoded ? decoded.user_id : null;
 };
 
 export const isAuthenticated = (): boolean => {

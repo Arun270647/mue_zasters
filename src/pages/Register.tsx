@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
+import { authAPI } from '../utils/api';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -23,29 +24,21 @@ const Register: React.FC = () => {
       return;
     }
 
+    if (formData.password.length < 6) {
+      setError('Password must be at least 6 characters long');
+      setLoading(false);
+      return;
+    }
+
     try {
-      const response = await fetch('/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: formData.email,
-          password: formData.password
-        }),
+      await authAPI.register(formData.email, formData.password);
+      
+      navigate('/login', { 
+        state: { message: 'Account created successfully! Please log in.' }
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        navigate('/login', { 
-          state: { message: 'Account created successfully! Please log in.' }
-        });
-      } else {
-        setError(data.message || 'Registration failed');
-      }
-    } catch (err) {
-      setError('Network error. Please try again.');
+    } catch (err: any) {
+      const errorMessage = err.response?.data?.detail || 'Registration failed';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -144,6 +137,13 @@ const Register: React.FC = () => {
                 )}
               </div>
             </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <p className="text-xs text-blue-800">
+              <strong>Note:</strong> New accounts are created with "User" role by default. 
+              To become an artist, apply through the Artist Application form after registration.
+            </p>
           </div>
 
           <div>
