@@ -24,7 +24,7 @@ async def register(user_data: UserCreate):
     user = User(
         email=user_data.email,
         password_hash=hashed_password,
-        role=2  # Default role is user
+        role=getattr(user_data, 'role', 2)  # Default role is user (2)
     )
     
     # Insert user into database
