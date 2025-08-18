@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle, CheckCircle, User } from 'lucide-react';
 import { authAPI } from '../utils/api';
 
 const Register: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    role: 2 // Default to User
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -31,7 +32,7 @@ const Register: React.FC = () => {
     }
 
     try {
-      await authAPI.register(formData.email, formData.password);
+      await authAPI.register(formData.email, formData.password, formData.role);
       
       navigate('/login', { 
         state: { message: 'Account created successfully! Please log in.' }
@@ -44,11 +45,21 @@ const Register: React.FC = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const value = e.target.name === 'role' ? parseInt(e.target.value) : e.target.value;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [e.target.name]: value
     });
+  };
+
+  const getRoleLabel = (role: number) => {
+    switch (role) {
+      case 0: return 'Admin';
+      case 1: return 'Artist';
+      case 2: return 'User';
+      default: return 'User';
+    }
   };
 
   return (
@@ -92,6 +103,27 @@ const Register: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                 />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-2">
+                Account Type
+              </label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                <select
+                  id="role"
+                  name="role"
+                  required
+                  className="pl-10 block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent appearance-none bg-white"
+                  value={formData.role}
+                  onChange={handleChange}
+                >
+                  <option value={2}>User - Browse and enjoy events</option>
+                  <option value={1}>Artist - Perform at events</option>
+                  <option value={0}>Admin - Manage platform</option>
+                </select>
               </div>
             </div>
             
@@ -141,8 +173,9 @@ const Register: React.FC = () => {
 
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-xs text-blue-800">
-              <strong>Note:</strong> New accounts are created with "User" role by default. 
-              To become an artist, apply through the Artist Application form after registration.
+              <strong>Selected Role:</strong> {getRoleLabel(formData.role)}
+              <br />
+              <strong>Note:</strong> Admin accounts should only be created by authorized personnel.
             </p>
           </div>
 
