@@ -63,6 +63,12 @@ class ArtistApplicationCreate(BaseModel):
     portfolio_links: str
 
 class ArtistApplication(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        json_encoders={ObjectId: str}
+    )
+    
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     user_id: PyObjectId
     stage_name: str
@@ -73,11 +79,6 @@ class ArtistApplication(BaseModel):
     reviewed_by: Optional[PyObjectId] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 # Artist Models
 class Artist(BaseModel):
