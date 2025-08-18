@@ -43,11 +43,7 @@ class UserLogin(BaseModel):
     password: str
 
 class User(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-        arbitrary_types_allowed=True,
-        json_encoders={ObjectId: str}
-    )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     email: EmailStr
