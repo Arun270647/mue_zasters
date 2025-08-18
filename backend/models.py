@@ -36,6 +36,7 @@ class PyObjectId(ObjectId):
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
+    role: Optional[int] = 2  # 0=Admin, 1=Artist, 2=User (default)
 
 class UserLogin(BaseModel):
     email: EmailStr
