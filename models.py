@@ -1,22 +1,37 @@
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
+from pydantic import BaseModel, EmailStr, Field, GetJsonSchemaHandler
+from pydantic.json_schema import JsonSchemaValue
+from pydantic._internal._model_serialization import to_jsonable_python
+from pydantic_core import core_schema
+from typing import Optional, List, Any
 from datetime import datetime
 from bson import ObjectId
 
 class PyObjectId(ObjectId):
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls,
+        source_type: Any,
+        handler,
+    ):
+        def validate_object_id(value: Any) -> ObjectId:
+            if isinstance(value, ObjectId):
+                return value
+            if isinstance(value, str):
+                if ObjectId.is_valid(value):
+                    return ObjectId(value)
+                raise ValueError("Invalid ObjectId")
+            raise ValueError("Invalid ObjectId")
+
+        return core_schema.no_info_plain_validator_function(
+            validate_object_id,
+            serialization=core_schema.to_string_ser_schema(),
+        )
 
     @classmethod
-    def validate(cls, v):
-        if not ObjectId.is_valid(v):
-            raise ValueError("Invalid objectid")
-        return ObjectId(v)
-
-    @classmethod
-    def __modify_schema__(cls, field_schema):
-        field_schema.update(type="string")
+    def __get_pydantic_json_schema__(
+        cls, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        return {"type": "string", "format": "objectid"}
 
 # User Models
 class UserCreate(BaseModel):
