@@ -64,3 +64,13 @@ async def login(user_data: UserLogin):
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+@router.get("/me")
+async def get_current_user_info(current_user = Depends(get_current_user)):
+    """Get current user information from JWT token"""
+    return {
+        "user_id": str(current_user["_id"]),
+        "email": current_user["email"],
+        "role": current_user["role"],
+        "created_at": current_user.get("created_at")
+    }
