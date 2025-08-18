@@ -30,11 +30,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(auth.router)
-app.include_router(admin.router)
-app.include_router(artist.router)
-app.include_router(user.router)
+# Include routers with /api prefix
+app.include_router(auth.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
+app.include_router(artist.router, prefix="/api")
+app.include_router(user.router, prefix="/api")
 
 @app.get("/")
 async def root():
