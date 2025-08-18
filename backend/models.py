@@ -59,11 +59,7 @@ class ArtistApplicationCreate(BaseModel):
     portfolio_links: str
 
 class ArtistApplication(BaseModel):
-    model_config = ConfigDict(
-        populate_by_name=True,
-        arbitrary_types_allowed=True,
-        json_encoders={ObjectId: str}
-    )
+    model_config = ConfigDict(arbitrary_types_allowed=True)
     
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     user_id: PyObjectId
