@@ -43,16 +43,17 @@ class UserLogin(BaseModel):
     password: str
 
 class User(BaseModel):
+    model_config = ConfigDict(
+        populate_by_name=True,
+        arbitrary_types_allowed=True,
+        json_encoders={ObjectId: str}
+    )
+    
     id: PyObjectId = Field(default_factory=PyObjectId, alias="_id")
     email: EmailStr
     password_hash: str
     role: int = 2  # 0=Admin, 1=Artist, 2=User
     created_at: datetime = Field(default_factory=datetime.utcnow)
-
-    class Config:
-        populate_by_name = True
-        arbitrary_types_allowed = True
-        json_encoders = {ObjectId: str}
 
 # Artist Application Models
 class ArtistApplicationCreate(BaseModel):
